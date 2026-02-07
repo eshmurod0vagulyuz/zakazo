@@ -126,3 +126,4 @@ def get_all_products():
     """Gets the list of all products"""
     query = "SELECT id, title, price FROM products;"
     return execute_query(query, fetch="all")
+

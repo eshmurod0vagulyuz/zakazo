@@ -1,6 +1,9 @@
-import os
-from dotenv import load_dotenv
 from datetime import date
+
+from core.config import ADMIN_USERNAME, ADMIN_PASSWORD
+# from core.db_settings import execute_query
+
+# from core import models
 from crud.users import get_user_by_username, create_user, get_all_users
 from crud.table_booking import get_filtered_durations, get_free_tables
 from crud.menu import (
@@ -12,11 +15,6 @@ from crud.menu import (
     get_all_products
 )
 from crud.order import create_order, get_user_orders
-
-load_dotenv()
-
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 
 
 def admin_panel():
@@ -198,4 +196,10 @@ def main():
 
 
 if __name__ == "__main__":
+    # execute_query(models.users)
+    # execute_query(models.products)
+    # execute_query(models.durations)
+    # execute_query(models.menu_products)
+    # execute_query(models.orders)
     main()
+
