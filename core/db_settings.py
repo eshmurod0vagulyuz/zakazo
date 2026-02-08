@@ -26,11 +26,11 @@ class DatabaseManager:
         else:
             self.conn.commit()
 
-        if self.conn:
-            self.conn.close()
-
         if self.cursor:
             self.cursor.close()
+
+        if self.conn:
+            self.conn.close()
 
     def execute(self, query: str, params: Union[tuple, dict, None] = None):
         self.cursor.execute(query, params)

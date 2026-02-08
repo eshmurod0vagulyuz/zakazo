@@ -35,3 +35,51 @@ def get_user_orders(user_id):
     """
     result = execute_query(query, (user_id,), fetch="all")
     return result if result else []
+
+def show_all_orders_by_time():
+    """Show all orders by time"""
+    query = """
+    SELECT o.id, u.username, p.title, o.amount, o.table_number, o.status, o.order_type, o.created_at
+    FROM orders o
+    JOIN users u ON o.user_id = u.id
+    JOIN menu_products mp ON o.menu_product_id = mp.id
+    JOIN products p ON mp.product_id = p.id
+    ORDER BY o.created_at ASC
+    """
+
+    orders = execute_query(query=query, fetch="all")
+    if not orders:
+        print("No orders found!")
+        return
+
+    for order in orders:
+        print(
+            f"Order ID: {order['id']}, User: {order['username']}, Product: {order['title']}, "
+            f"Amount: {order['amount']}, Table number: {order['table_number']}, "
+            f"Status: {order['status']}, Order type: {order['order_type']}, "
+            f"Order date: {order['created_at']}"
+        )
+
+
+def change_order_status(order_id: int, new_status: str) -> bool:
+    """Change status of order"""
+    query = """
+    UPDATE orders 
+    SET status = %s 
+    WHERE id = %s
+    """
+    params = (new_status, order_id)
+    return execute_query(query=query, params=params)
+
+
+def cancel_order(order_id: int) -> bool:
+    """
+    Cancels order by changing its status to 'cancelled'
+    :param order_id: Order ID
+    :return: bool
+    """
+    query = """
+    UPDATE orders SET status = 'cancelled' WHERE id = %s AND status != 'cancelled'"""
+    params: tuple[int] = (order_id,)
+    return execute_query(query=query, params=params)
+

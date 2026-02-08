@@ -1,6 +1,9 @@
-import os
-from dotenv import load_dotenv
 from datetime import date
+
+from core.config import ADMIN_USERNAME, ADMIN_PASSWORD
+# from core.db_settings import execute_query
+
+# from core import models
 from crud.users import get_user_by_username, create_user, get_all_users
 from crud.table_booking import get_filtered_durations, get_free_tables
 from crud.menu import (
@@ -9,14 +12,9 @@ from crud.menu import (
     admin_get_all_stock,
     add_new_product,
     add_to_daily_menu,
-    get_all_products
+    get_all_products, delete_product, remove_product_from_today_menu
 )
-from crud.order import create_order, get_user_orders
-
-load_dotenv()
-
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+from crud.order import create_order, get_user_orders, show_all_orders_by_time, change_order_status, cancel_order
 
 
 def admin_panel():
@@ -25,8 +23,12 @@ def admin_panel():
         print("1. View Food Inventory")
         print("2. User List")
         print("3. Add New Product (To Database)")
-        print("4. Add Dish to Daily Menu")
-        print("5. View Today's Menu")
+        print("4. Delete Product")
+        print("5. Add Dish to Daily Menu")
+        print("6. View Today's Menu")
+        print("7. Remove product from today's menu")
+        print("8. Show all orders by time")
+        print("9. Change order status")
         print("0. Exit")
 
         choice = input("Choice: ")
@@ -60,6 +62,19 @@ def admin_panel():
                 print("❗ Error: Price must be a number!")
 
         elif choice == "4":
+            try:
+                product_id = int(input("Enter the product ID to delete: "))
+            except ValueError:
+                print("❌ Invalid input. Please enter a valid product ID!")
+            else:
+                if delete_product(product_id):
+                    print("✅Product deleted")
+                else:
+                    print("❌Delete failed or product not found!")
+
+
+
+        elif choice == "5":
             products = get_all_products()
             if not products:
                 print("❗ Please add a product first.")
@@ -77,7 +92,7 @@ def admin_panel():
             except ValueError:
                 print("❗ Error: ID and quantity must be numbers!")
 
-        elif choice == "5":
+        elif choice == "6":
             menu = get_admin_daily_menu()
             if not menu:
                 print("\n❗ Menu for today has not been set yet.")
@@ -88,6 +103,50 @@ def admin_panel():
                 for item in menu:
                     print(f"{item['id']:<4} | {item['title']:<15} | {item['price']:<10} | {item['amount']:<8}")
 
+        elif choice == "7":
+            try:
+                pro_id = int(input("Enter the product ID to remove from today's menu: "))
+            except ValueError:
+                print("❌ Error: Product ID must be numbers!")
+
+            else:
+                if remove_product_from_today_menu(pro_id):
+                    print("✅ Product removed successfully!")
+
+                else:
+                    print("❌ Failed to remove product from today's menu!")
+
+        elif choice == "8":
+            print("\n📋 Orders sorted by scheduled time:\n")
+            show_all_orders_by_time()
+
+        elif choice == "9":
+            try:
+                order_id = int(input("Enter the order ID: "))
+            except ValueError:
+                print("Order ID must be numbers!")
+                continue
+
+            print("Choose order status")
+            print("1.pending")
+            print("2.done")
+            print("3.cancelled")
+
+            status_choice = input("Choice: ")
+            status_map = {
+                "1": "pending",
+                "2": "done",
+                "3": "cancelled"
+            }
+            new_status = status_map.get(status_choice)
+            if not new_status:
+                print("❌ Invalid status choice!")
+                continue
+            if change_order_status(order_id, new_status):
+                print("✅ Order status updated successfully!")
+            else:
+                print("❌ Failed to update order status!")
+
         elif choice == "0":
             break
 
@@ -95,12 +154,25 @@ def admin_panel():
 def user_panel(user):
     while True:
         print(f"\n--- USER PANEL ({user['username']}) ---")
-        print("1. Book a Table & Order Food")
-        print("2. My Orders")
+        print("1. View today's menu")
+        print("2. Book a Table & Order Food")
+        print("3. My Orders")
+        print("4. Cancel my order")
         print("0. Logout")
 
         choice = input("Choice: ")
         if choice == "1":
+            menu = get_admin_daily_menu()
+            if not menu:
+                print("\n❗ Menu for today has not been set yet.")
+            else:
+                print(f"\n--- TODAY'S MENU ({date.today()}) ---")
+                print(f"{'ID':<4} | {'Dish Name':<15} | {'Price':<10} | {'Stock':<8}")
+                print("-" * 45)
+                for item in menu:
+                    print(f"{item['id']:<4} | {item['title']:<15} | {item['price']:<10} | {item['amount']:<8}")
+
+        elif choice == "2":
             today = str(date.today())
             slots = get_filtered_durations(today)
 
@@ -148,7 +220,7 @@ def user_panel(user):
             except ValueError:
                 print("❗ Error: Please enter a valid number!")
 
-        elif choice == "2":
+        elif choice == "3":
             my_orders = get_user_orders(user['id'])
             if not my_orders:
                 print("\n❗ You have no orders yet.")
@@ -157,6 +229,23 @@ def user_panel(user):
                 for o in my_orders:
                     print(
                         f"ID: {o['id']} | Dish: {o['title']} | Qty: {o['amount']} | Time: {o['from_time']} | Table: {o['table_number']} | Status: {o['status']}")
+
+        elif choice == "4":
+            try:
+                ord_id = int(input("\nSelect Order ID: "))
+
+            except ValueError:
+                print("❌ Error: Order ID must be numbers!")
+
+            confirm = input("Are you sure you want to cancel this order? (yes/no): ").lower()
+            if confirm != "yes":
+                print("❎ Cancel aborted")
+                continue
+
+            if cancel_order(ord_id):
+                print("✅ Order cancelled successfully")
+            else:
+                print("❌ Order not found or already cancelled")
 
         elif choice == "0":
             break
@@ -198,4 +287,10 @@ def main():
 
 
 if __name__ == "__main__":
+    # execute_query(models.users)
+    # execute_query(models.products)
+    # execute_query(models.durations)
+    # execute_query(models.menu_products)
+    # execute_query(models.orders)
     main()
+

@@ -126,3 +126,29 @@ def get_all_products():
     """Gets the list of all products"""
     query = "SELECT id, title, price FROM products;"
     return execute_query(query, fetch="all")
+
+def delete_product(product_id: int) -> bool:
+    """
+    Deletes product from database
+    :param product_id: product id
+    :return:
+    """
+    query = " DELETE FROM products WHERE id = %s"
+    params: tuple = (product_id,)
+    return execute_query(query=query, params=params, fetch="one")
+
+def remove_product_from_today_menu(product_id: int):
+    """
+    Removes product from today's menu
+    :param product_id:
+    :return:
+    """
+    query =  """
+    DELETE FROM menu_products
+    WHERE id = %s
+    AND date_of_menu = CURRENT_DATE
+    """
+    params: tuple = (product_id,)
+    result = execute_query(query=query, params=params, fetch="one")
+    return result
+
